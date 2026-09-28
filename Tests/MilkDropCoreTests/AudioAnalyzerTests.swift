@@ -7,9 +7,11 @@ final class AudioAnalyzerTests: XCTestCase {
         let analyzer = AudioAnalyzer(sampleRate: 48_000)
         analyzer.consume(samples: Array(repeating: 0, count: 2048))
         let snapshot = analyzer.snapshot()
-        XCTAssertEqual(snapshot.bass, 0)
-        XCTAssertEqual(snapshot.mid, 0)
-        XCTAssertEqual(snapshot.treble, 0)
+        // MilkDrop's relative-band controls use 1.0 as the neutral baseline
+        // when no long-term signal exists; silence must remain finite.
+        XCTAssertEqual(snapshot.bass, 1)
+        XCTAssertEqual(snapshot.mid, 1)
+        XCTAssertEqual(snapshot.treble, 1)
         XCTAssertTrue(snapshot.waveform.allSatisfy(\.isFinite))
     }
 
@@ -21,7 +23,7 @@ final class AudioAnalyzerTests: XCTestCase {
             analyzer.consume(samples: samples)
             return analyzer.snapshot()
         }
-        let low = tone(100), middle = tone(1_000), high = tone(8_000)
+        let low = tone(300), middle = tone(1_500), high = tone(6_000)
         XCTAssertTrue(low.bass > low.mid && low.bass > low.treble)
         XCTAssertTrue(middle.mid > middle.bass && middle.mid > middle.treble)
         XCTAssertTrue(high.treble > high.bass && high.treble > high.mid)
