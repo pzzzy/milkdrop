@@ -1,0 +1,30 @@
+name: macOS CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate package manifest
+        run: swift package dump-package >/dev/null
+      - name: Build
+        run: swift build -c release
+      - name: Deterministic core checks
+        run: .build/release/MilkDropCoreCheck
+      - name: XCTest suite
+        run: swift test
